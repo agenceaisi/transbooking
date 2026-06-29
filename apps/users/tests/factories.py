@@ -20,6 +20,6 @@ class UserFactory(DjangoModelFactory):
     prenom = "Awa"
     nom = "Ouedraogo"
     email = factory.Sequence(lambda n: f"user{n}@example.com")
-    phone = factory.Sequence(lambda n: f"+226700000{n:03d}")
+    phone = factory.Sequence(lambda n: f"+2267{n:07d}")
     role = factory.SubFactory(RoleFactory)
     password = factory.PostGenerationMethodCall("set_password", "password123")

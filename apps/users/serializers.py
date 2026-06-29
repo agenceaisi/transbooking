@@ -2,6 +2,8 @@ from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
+from utils.validators import validate_phone_bf
+
 from .models import AgentProfile, User
 from .services import create_voyageur
 
@@ -9,7 +11,7 @@ from .services import create_voyageur
 class UserRegistrationSerializer(serializers.Serializer):
     prenom = serializers.CharField(max_length=100)
     nom = serializers.CharField(max_length=100)
-    phone = serializers.CharField(max_length=30)
+    phone = serializers.CharField(max_length=30, validators=[validate_phone_bf])
     password = serializers.CharField(write_only=True, min_length=8)
     email = serializers.EmailField(required=False, allow_blank=True, allow_null=True)
 

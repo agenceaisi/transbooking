@@ -2,6 +2,7 @@ from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, Permis
 from django.db import models
 
 from utils.models import TimeStampedModel
+from utils.validators import validate_phone_bf
 
 
 class Role(TimeStampedModel):
@@ -50,7 +51,7 @@ class User(TimeStampedModel, AbstractBaseUser, PermissionsMixin):
     prenom = models.CharField(max_length=100)
     nom = models.CharField(max_length=100)
     email = models.EmailField(null=True, blank=True)
-    phone = models.CharField(max_length=30, unique=True)
+    phone = models.CharField(max_length=30, unique=True, validators=[validate_phone_bf])
     role = models.ForeignKey(
         Role,
         on_delete=models.PROTECT,

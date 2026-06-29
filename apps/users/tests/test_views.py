@@ -56,6 +56,23 @@ def test_register_rejects_duplicate_phone(api_client):
 
 
 @pytest.mark.django_db
+def test_register_rejects_invalid_phone_format(api_client):
+    response = api_client.post(
+        "/api/v1/auth/register/",
+        {
+            "prenom": "Awa",
+            "nom": "Ouedraogo",
+            "phone": "07000",
+            "password": "password123",
+        },
+        format="json",
+    )
+
+    assert response.status_code == 400
+    assert "phone" in response.data
+
+
+@pytest.mark.django_db
 def test_login_rejects_wrong_password(api_client):
     role = Role.objects.create(name=Role.RoleName.VOYAGEUR)
     User.objects.create_user(
@@ -102,3 +119,25 @@ def test_profile_update_allows_phone_and_email_only(api_client):
     assert user.phone == "+22670000005"
     assert user.email == "new@example.com"
     assert user.prenom == "Awa"
+
+
+@pytest.mark.django_db
+def test_logout_rejects_invalid_refresh_token(api_client):
+    role = Role.objects.create(name=Role.RoleName.VOYAGEUR)
+    user = User.objects.create_user(
+        prenom="Awa",
+        nom="Ouedraogo",
+        phone="+22670000006",
+        password="password123",
+        role=role,
+    )
+    api_client.force_authenticate(user=user)
+
+    response = api_client.post(
+        "/api/v1/auth/logout/",
+        {"refresh": "not-a-real-token"},
+        format="json",
+    )
+
+    assert response.status_code == 400
+    assert "refresh" in response.data

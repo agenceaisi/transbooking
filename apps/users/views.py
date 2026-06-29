@@ -1,8 +1,11 @@
+from django.utils.decorators import method_decorator
+from django_ratelimit.decorators import ratelimit
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
 from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
+from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
@@ -14,7 +17,14 @@ from .serializers import (
     UserRegistrationSerializer,
 )
 
+# Auth endpoints — 10 tentatives/minute par IP (cf. docs/specs/security.md §4).
+auth_ratelimit = method_decorator(
+    ratelimit(key="ip", rate="10/m", method="POST", block=True),
+    name="post",
+)
 
+
+@auth_ratelimit
 class UserRegistrationView(GenericAPIView):
     serializer_class = UserRegistrationSerializer
     permission_classes = [AllowAny]
@@ -27,28 +37,32 @@ class UserRegistrationView(GenericAPIView):
         return Response(UserProfileSerializer(user).data, status=status.HTTP_201_CREATED)
 
 
+@auth_ratelimit
 class TransBookingTokenObtainPairView(TokenObtainPairView):
     serializer_class = TransBookingTokenObtainPairSerializer
 
 
+@auth_ratelimit
 class TransBookingTokenRefreshView(TokenRefreshView):
     pass
 
 
+@auth_ratelimit
 class LogoutView(GenericAPIView):
     serializer_class = LogoutSerializer
     permission_classes = [IsAuthenticated]
 
     @extend_schema(responses={status.HTTP_204_NO_CONTENT: None})
     def post(self, request, *args, **kwargs):
-        refresh = request.data.get("refresh")
-        if not refresh:
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        try:
+            RefreshToken(serializer.validated_data["refresh"]).blacklist()
+        except TokenError:
             return Response(
-                {"refresh": "Ce champ est obligatoire."},
+                {"refresh": "Token invalide ou expire."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        token = RefreshToken(refresh)
-        token.blacklist()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 

@@ -160,6 +160,7 @@ REST_FRAMEWORK = {
         "user": env("THROTTLE_RATE_USER"),
     },
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    "EXCEPTION_HANDLER": "utils.exceptions.custom_exception_handler",
     "DEFAULT_RENDERER_CLASSES": [
         "rest_framework.renderers.JSONRenderer",
         "rest_framework.renderers.BrowsableAPIRenderer",
@@ -205,6 +206,9 @@ CACHES = {
         "LOCATION": env("CACHE_URL", default=REDIS_URL),
     }
 }
+
+# Rate limiting (django-ratelimit) s'appuie sur le cache « default » (cf. security.md §4).
+RATELIMIT_USE_CACHE = "default"
 
 LOGGING = {
     "version": 1,
