@@ -1,3 +1,4 @@
+from drf_spectacular.utils import extend_schema
 from rest_framework import status
 from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -6,6 +7,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 from .serializers import (
+    LogoutSerializer,
     TransBookingTokenObtainPairSerializer,
     UserProfileSerializer,
     UserProfileUpdateSerializer,
@@ -17,6 +19,7 @@ class UserRegistrationView(GenericAPIView):
     serializer_class = UserRegistrationSerializer
     permission_classes = [AllowAny]
 
+    @extend_schema(responses={status.HTTP_201_CREATED: UserProfileSerializer})
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -33,8 +36,10 @@ class TransBookingTokenRefreshView(TokenRefreshView):
 
 
 class LogoutView(GenericAPIView):
+    serializer_class = LogoutSerializer
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(responses={status.HTTP_204_NO_CONTENT: None})
     def post(self, request, *args, **kwargs):
         refresh = request.data.get("refresh")
         if not refresh:
@@ -55,10 +60,15 @@ class UserMeView(GenericAPIView):
             return UserProfileUpdateSerializer
         return UserProfileSerializer
 
+    @extend_schema(responses=UserProfileSerializer)
     def get(self, request, *args, **kwargs):
         serializer = self.get_serializer(request.user)
         return Response(serializer.data)
 
+    @extend_schema(
+        request=UserProfileUpdateSerializer,
+        responses=UserProfileSerializer,
+    )
     def patch(self, request, *args, **kwargs):
         serializer = self.get_serializer(request.user, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)

@@ -19,6 +19,9 @@ env = environ.Env(
     STORAGE_BACKEND=(str, "local"),
     AWS_BUCKET_NAME=(str, ""),
     COMMISSION_RATE_DEFAULT=(float, 10.0),
+    THROTTLE_RATE_ANON=(str, "60/min"),
+    THROTTLE_RATE_USER=(str, "1000/min"),
+    LOG_LEVEL=(str, "INFO"),
 )
 
 environ.Env.read_env(BASE_DIR / ".env")
@@ -43,6 +46,7 @@ THIRD_PARTY_APPS = [
     "rest_framework",
     "rest_framework_simplejwt",
     "rest_framework_simplejwt.token_blacklist",
+    "drf_spectacular",
 ]
 
 LOCAL_APPS = [
@@ -137,11 +141,39 @@ REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "rest_framework_simplejwt.authentication.JWTAuthentication",
     ],
+    # Défaut sûr : tout endpoint exige l'authentification sauf override explicite
+    # (jamais de AllowAny silencieux — cf. docs/specs/security.md).
+    "DEFAULT_PERMISSION_CLASSES": [
+        "rest_framework.permissions.IsAuthenticated",
+    ],
     "DEFAULT_FILTER_BACKENDS": [
         "django_filters.rest_framework.DjangoFilterBackend",
     ],
     "DEFAULT_PAGINATION_CLASS": "utils.pagination.StandardPagination",
     "PAGE_SIZE": 20,
+    "DEFAULT_THROTTLE_CLASSES": [
+        "rest_framework.throttling.AnonRateThrottle",
+        "rest_framework.throttling.UserRateThrottle",
+    ],
+    "DEFAULT_THROTTLE_RATES": {
+        "anon": env("THROTTLE_RATE_ANON"),
+        "user": env("THROTTLE_RATE_USER"),
+    },
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    "DEFAULT_RENDERER_CLASSES": [
+        "rest_framework.renderers.JSONRenderer",
+        "rest_framework.renderers.BrowsableAPIRenderer",
+    ],
+}
+
+SPECTACULAR_SETTINGS = {
+    "TITLE": "TransBooking BF API",
+    "DESCRIPTION": (
+        "API de la plateforme SaaS de gestion du transport interurbain au Burkina Faso "
+        "(réservations, colis, paiements Mobile Money, mode hors ligne)."
+    ),
+    "VERSION": "1.0.0",
+    "SERVE_INCLUDE_SCHEMA": False,
 }
 
 SIMPLE_JWT = {
@@ -165,6 +197,42 @@ CELERY_RESULT_BACKEND = REDIS_URL
 CELERY_TIMEZONE = TIME_ZONE
 CELERY_TASK_TRACK_STARTED = True
 CELERY_TASK_TIME_LIMIT = 30 * 60
+
+# Cache Redis partagé entre workers (throttling DRF + cache_page des dashboards).
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.redis.RedisCache",
+        "LOCATION": env("CACHE_URL", default=REDIS_URL),
+    }
+}
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "verbose": {
+            "format": "[{asctime}] {levelname} {name}: {message}",
+            "style": "{",
+        },
+    },
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "verbose",
+        },
+    },
+    "root": {
+        "handlers": ["console"],
+        "level": env("LOG_LEVEL"),
+    },
+    "loggers": {
+        "django": {
+            "handlers": ["console"],
+            "level": env("LOG_LEVEL"),
+            "propagate": False,
+        },
+    },
+}
 
 SMS_PROVIDER = env("SMS_PROVIDER")
 SMS_API_KEY = env("SMS_API_KEY")

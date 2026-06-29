@@ -26,6 +26,10 @@ class UserRegistrationSerializer(serializers.Serializer):
             raise serializers.ValidationError(exc.message_dict) from exc
 
 
+class LogoutSerializer(serializers.Serializer):
+    refresh = serializers.CharField()
+
+
 class UserProfileSerializer(serializers.ModelSerializer):
     role = serializers.SerializerMethodField()
 
