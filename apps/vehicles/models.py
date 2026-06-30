@@ -24,6 +24,16 @@ class Vehicle(TimeStampedModel):
         choices=VehicleStatus.choices,
         default=VehicleStatus.ACTIVE,
     )
+    # Plan des sieges stocke en JSON.
+    # Format : {"layout": [[1, 2], [3, 4], ...], "reserved": [0]}
+    #   - layout   : liste de rangees, chaque rangee = liste de numeros de siege
+    #   - reserved : numeros de siege non commercialisables (chauffeur, hotesse...)
+    seat_plan = models.JSONField(default=dict, blank=True)
+
+    class Meta:
+        ordering = ["registration"]
+        verbose_name = "Vehicule"
+        verbose_name_plural = "Vehicules"
 
     def __str__(self) -> str:
         return self.registration
