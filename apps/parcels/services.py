@@ -167,22 +167,12 @@ def register_parcel(validated_data: dict, agent=None) -> Parcel:
 
     # Le SMS d'enregistrement n'est pas une ParcelNotification : il ne consomme
     # pas la regle anti-doublon reservee au SMS d'arrivee (notify_recipient).
+    # Envoye de maniere asynchrone (cf. parcels.tasks.send_parcel_dispatch_sms).
     if not is_offline:
-        _send_registration_sms(parcel)
+        from .tasks import send_parcel_dispatch_sms
+
+        send_parcel_dispatch_sms.delay(parcel.pk)
     return parcel
-
-
-def _send_registration_sms(parcel: Parcel) -> None:
-    """Inform the recipient that a parcel has been registered for them.
-
-    Args:
-        parcel: The freshly registered parcel.
-    """
-    message = (
-        f"Un colis vous est destine (suivi {parcel.tracking_number}). "
-        f"Vous serez prevenu a son arrivee a {parcel.destination_city.name}."
-    )
-    send_sms(parcel.recipient_phone, message)
 
 
 def notify_recipient(
@@ -260,4 +250,10 @@ def update_status(parcel: Parcel, new_status: str) -> Parcel:
         parcel.collected_at = timezone.now()
         update_fields.append("collected_at")
     parcel.save(update_fields=update_fields)
+
+    # A l'arrivee, le destinataire est prevenu par SMS (asynchrone, idempotent).
+    if new_status == ParcelStatus.ARRIVED:
+        from .tasks import send_parcel_arrival_sms
+
+        send_parcel_arrival_sms.delay(parcel.pk)
     return parcel

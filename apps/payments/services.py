@@ -150,7 +150,38 @@ def confirm_payment(payment: Payment, transaction_ref: str = "") -> Payment:
         "Paiement %s confirme (ref %s)", payment.pk, _mask_ref(transaction_ref)
     )
     _send_payment_sms(payment)
+    if booking is not None:
+        _schedule_booking_notifications(booking)
     return payment
+
+
+# Delai avant le depart pour l'envoi du SMS de rappel (cf. PROMPT 12).
+REMINDER_HOURS_BEFORE = 3
+
+
+def _schedule_booking_notifications(booking) -> None:
+    """Trigger the confirmation SMS and schedule the departure reminder.
+
+    Sends the booking confirmation asynchronously and books the departure
+    reminder for ~3h before the trip via ``apply_async(eta=...)`` (skipped when
+    the trip already departs within that window).
+
+    Args:
+        booking: The paid booking to notify.
+    """
+    # Import local : evite un cycle d'import bookings <-> payments au chargement.
+    from datetime import timedelta
+
+    from apps.bookings.tasks import (
+        send_booking_confirmation_sms,
+        send_departure_reminder_sms,
+    )
+
+    send_booking_confirmation_sms.delay(booking.pk)
+
+    reminder_eta = booking.trip.departure_time - timedelta(hours=REMINDER_HOURS_BEFORE)
+    if reminder_eta > timezone.now():
+        send_departure_reminder_sms.apply_async(args=[booking.pk], eta=reminder_eta)
 
 
 def _send_payment_sms(payment: Payment) -> None:

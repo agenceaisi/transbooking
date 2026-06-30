@@ -99,7 +99,7 @@ class CompanyDetailSerializer(serializers.ModelSerializer):
         return [pm.method for pm in obj.payment_methods.all() if pm.is_active]
 
     def get_subscription_status(self, obj: Company) -> str | None:
-        # TODO: brancher sur l'app subscriptions (PROMPT non encore implemente).
+        # Abonnement courant de la compagnie (OneToOne, peut etre absent).
         subscription = getattr(obj, "subscription", None)
         return getattr(subscription, "status", None) if subscription else None
 

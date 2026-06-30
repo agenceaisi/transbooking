@@ -115,7 +115,11 @@ def create_booking(validated_data: dict, agent=None) -> Booking:
         trip.available_seats -= 1
         trip.save(update_fields=["available_seats", "updated_at"])
 
-    _send_confirmation_sms(booking)
+    # La confirmation part une fois la reservation payee. Une reservation creee
+    # directement comme payee (guichet) est confirmee tout de suite ; sinon c'est
+    # le paiement qui declenche le SMS (cf. payments.services.confirm_payment).
+    if not is_offline and booking.status == BookingStatus.PAID:
+        _send_confirmation_sms(booking)
     return booking
 
 
