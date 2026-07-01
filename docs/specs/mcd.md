@@ -496,14 +496,12 @@ Clés prévues : `global_commission_rate` · `sms_provider` · `sms_api_key` · 
 
 ---
 
-## Points en suspens (à décider avant implémentation)
+## Points discutés
 
-| Sujet | Question |
-|-------|----------|
-| Plan de sièges | Modéliser rangées/colonnes ou attribution toujours automatique ? |
-| Codes de réduction | Table dédiée avec validité et usage unique ? |
-| Stockage fichiers | S3 / Cloudinary / local ? |
-| Mobile Money | API directe ou saisie manuelle (actuel : manuelle) |
-| Remboursements | Processus automatique ou manuel par l'admin ? |
-| Multi-admins | Plusieurs admins par compagnie (ex : directeur + comptable) ? |
-| Rétention logs | sync_logs : 30j ? activity_logs : 1 an ? |
+| Sujet | Question |Reponse|
+|-------|----------|-------|
+| Codes de réduction | Table dédiée avec validité et usage unique ? | oui|
+| Stockage fichiers | S3 / Cloudinary / local ? | S3 |
+| Mobile Money | API directe ou saisie manuelle (actuel : manuelle) | en entente |
+| Multi-admins | Plusieurs admins par compagnie (ex : directeur + comptable) ? | oui |
+| Rétention logs | sync_logs : 30j ? activity_logs : 1 an ? | optimum|
