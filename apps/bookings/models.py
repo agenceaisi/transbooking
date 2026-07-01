@@ -17,6 +17,16 @@ class BoardingMethod(models.TextChoices):
     MANUAL = "manual", "Manuel"
 
 
+class Gender(models.TextChoices):
+    MALE = "M", "Masculin"
+    FEMALE = "F", "Feminin"
+
+
+class IdType(models.TextChoices):
+    CNIB = "CNIB", "CNIB"
+    PASSEPORT = "passeport", "Passeport"
+
+
 class Booking(TimeStampedModel):
     """Reservation d'un siege sur un voyage.
 
@@ -52,9 +62,36 @@ class Booking(TimeStampedModel):
     first_name = models.CharField(max_length=100)
     last_name = models.CharField(max_length=100)
     phone = models.CharField(max_length=30)
+    gender = models.CharField(max_length=1, choices=Gender.choices, blank=True)
+
+    # Piece d'identite : donnee sensible, a exclure des listes (cf. mcd.md §7).
+    id_type = models.CharField(max_length=20, choices=IdType.choices, blank=True)
+    id_number = models.CharField(max_length=50, blank=True)
+
+    # Ville de montee / descente : peuvent differer des extremites du trajet
+    # (le passager peut monter a une escale). Facultatives.
+    origin_city = models.ForeignKey(
+        "geography.City",
+        on_delete=models.PROTECT,
+        related_name="bookings_boarding",
+        null=True,
+        blank=True,
+    )
+    destination_city = models.ForeignKey(
+        "geography.City",
+        on_delete=models.PROTECT,
+        related_name="bookings_dropoff",
+        null=True,
+        blank=True,
+    )
+
+    # Bagages enregistres.
+    has_luggage = models.BooleanField(default=False)
+    luggage_qty = models.PositiveIntegerField(null=True, blank=True)
 
     seat_number = models.CharField(max_length=10)
     amount = models.DecimalField(max_digits=10, decimal_places=2)
+    discount_code = models.CharField(max_length=30, blank=True)
     payment_method = models.CharField(max_length=20, blank=True)
 
     # Genere automatiquement : "BF" + annee + sequence a 6 chiffres (BF2026001234).

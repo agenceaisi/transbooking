@@ -70,8 +70,22 @@ class Parcel(TimeStampedModel):
     recipient_name = models.CharField(max_length=150)
     recipient_phone = models.CharField(max_length=30)
 
+    # Nature du contenu (ex: vetements, documents) — figure sur le bordereau.
+    nature = models.CharField(max_length=100, blank=True)
     description = models.TextField(blank=True)
     weight_kg = models.DecimalField(max_digits=7, decimal_places=2)
+
+    # Dimensions facultatives (cm) pour le calcul volumetrique / l'etiquette.
+    length_cm = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True)
+    width_cm = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True)
+    height_cm = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True)
+
+    # Valeur declaree (FCFA) : base de couverture en cas de perte/dommage.
+    declared_value = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    # Mention FRAGILE sur l'etiquette si True.
+    is_fragile = models.BooleanField(default=False)
+    photo = models.ImageField(upload_to="parcels/photos/", null=True, blank=True)
+
     # Calcule a l'enregistrement (poids x prix_par_kg + frais_fixes selon tranche).
     tariff = models.DecimalField(max_digits=10, decimal_places=2, default=0)
 
@@ -136,6 +150,11 @@ class ParcelNotification(TimeStampedModel):
         null=True,
         blank=True,
     )
+
+    # Mode hors ligne (l'agent peut notifier sans connexion puis synchroniser).
+    is_offline = models.BooleanField(default=False)
+    offline_created_at = models.DateTimeField(null=True, blank=True)
+    synced_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         ordering = ["-created_at"]

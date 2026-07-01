@@ -56,9 +56,15 @@ class Claim(TimeStampedModel):
         blank=True,
     )
 
+    # Numero de billet saisi manuellement si le plaignant n'a pas de compte
+    # (booking non rattache). Cf. mcd.md §9.
+    ticket_number = models.CharField(max_length=20, blank=True)
+
     claim_type = models.CharField(max_length=20, choices=ClaimType.choices)
     subject = models.CharField(max_length=200)
     description = models.TextField()
+    travel_date = models.DateField(null=True, blank=True)
+    attachment = models.FileField(upload_to="claims/attachments/", null=True, blank=True)
 
     status = models.CharField(
         max_length=20,

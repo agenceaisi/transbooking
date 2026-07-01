@@ -12,17 +12,19 @@ class SubscriptionStatus(models.TextChoices):
 class SubscriptionPlan(TimeStampedModel):
     """Forfait d'abonnement propose aux compagnies par le super admin.
 
-    Definit le prix et la duree (en jours) ainsi que des quotas indicatifs.
-    Un abonnement (`Subscription`) rattache une compagnie a un forfait.
+    Definit le prix et la duree (en mois) ainsi que la liste d'avantages
+    inclus (`features`, flexible). Un abonnement (`Subscription`) rattache une
+    compagnie a un forfait (cf. mcd.md §3).
     """
 
     name = models.CharField(max_length=100, unique=True)
     description = models.TextField(blank=True)
-    price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    # Duree de validite du forfait, utilisee pour le renouvellement automatique.
-    duration_days = models.PositiveIntegerField(default=30)
-    max_vehicles = models.PositiveIntegerField(null=True, blank=True)
-    max_agents = models.PositiveIntegerField(null=True, blank=True)
+    price = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    # Duree de validite du forfait en mois (1 = mensuel, 12 = annuel).
+    duration_months = models.PositiveIntegerField(default=1)
+    # Avantages inclus, stockes en JSON pour rester flexibles
+    # (ex: {"max_vehicles": 10, "max_agents": 20, "support": "prioritaire"}).
+    features = models.JSONField(null=True, blank=True)
     is_active = models.BooleanField(default=True)
 
     class Meta:
@@ -35,18 +37,19 @@ class SubscriptionPlan(TimeStampedModel):
 
 
 class Subscription(TimeStampedModel):
-    """Abonnement courant d'une compagnie a un forfait.
+    """Abonnement d'une compagnie a un forfait.
 
-    Une compagnie possede au plus un abonnement (`OneToOne`). La tache
+    Une compagnie peut avoir plusieurs abonnements dans le temps (historique,
+    cf. mcd.md §3) ; l'abonnement courant est celui de statut `active`. La tache
     `subscriptions.tasks.check_expiring_subscriptions` previent la compagnie 7
     jours avant `end_date`, puis renouvelle (si `auto_renew`) ou suspend la
     compagnie a l'expiration (cf. PROMPT 12).
     """
 
-    company = models.OneToOneField(
+    company = models.ForeignKey(
         "companies.Company",
         on_delete=models.CASCADE,
-        related_name="subscription",
+        related_name="subscriptions",
     )
     plan = models.ForeignKey(
         SubscriptionPlan,
@@ -75,3 +78,29 @@ class Subscription(TimeStampedModel):
 
     def __str__(self) -> str:
         return f"{self.company.name} - {self.plan.name}"
+
+
+class SubscriptionInvoice(TimeStampedModel):
+    """Facture emise pour un cycle d'abonnement d'une compagnie.
+
+    `paid_at` NULL = facture en attente de reglement. Le PDF est genere puis
+    stocke (`pdf`) et transmis a la compagnie (cf. mcd.md §3).
+    """
+
+    subscription = models.ForeignKey(
+        Subscription,
+        on_delete=models.CASCADE,
+        related_name="invoices",
+    )
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    # NULL = en attente ; renseigne a la confirmation du paiement.
+    paid_at = models.DateTimeField(null=True, blank=True)
+    pdf = models.FileField(upload_to="subscriptions/invoices/", null=True, blank=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name = "Facture d'abonnement"
+        verbose_name_plural = "Factures d'abonnement"
+
+    def __str__(self) -> str:
+        return f"Facture {self.pk} - {self.subscription.company.name}"

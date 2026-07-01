@@ -14,8 +14,21 @@ class IsSuperAdmin(RolePermission):
     role_name = "super_admin"
 
 
+# Statuts de compagnie qui interdisent toute operation de son administrateur.
+_BLOCKING_COMPANY_STATUSES = {"suspended", "rejected"}
+
+
 class IsCompanyAdmin(RolePermission):
     role_name = "company_admin"
+
+    def has_permission(self, request, view) -> bool:
+        if not super().has_permission(request, view):
+            return False
+        # Une compagnie suspendue (ou rejetee) ne peut plus operer : son admin
+        # est refuse. L'admin sans compagnie reste autorise (la vue renvoie 404).
+        company = getattr(request.user, "administered_company", None)
+        status = getattr(company, "status", None)
+        return status not in _BLOCKING_COMPANY_STATUSES
 
 
 class IsAgent(BasePermission):

@@ -4,6 +4,12 @@ from django.db import models
 from utils.models import TimeStampedModel
 
 
+class SyncStatus(models.TextChoices):
+    SUCCESS = "success", "Succes"
+    PARTIAL = "partial", "Partiel"
+    ERROR = "error", "Erreur"
+
+
 class SyncEntity(models.TextChoices):
     BOOKING = "booking", "Reservation"
     PARCEL = "parcel", "Colis"
@@ -38,6 +44,12 @@ class SyncLog(TimeStampedModel):
     conflicts_count = models.PositiveIntegerField(default=0)
     # Enregistrements rejetes (voyage complet, annule, donnee invalide).
     errors_count = models.PositiveIntegerField(default=0)
+    status = models.CharField(
+        max_length=20,
+        choices=SyncStatus.choices,
+        default=SyncStatus.SUCCESS,
+    )
+    error_details = models.TextField(blank=True)
 
     class Meta:
         ordering = ["-created_at"]

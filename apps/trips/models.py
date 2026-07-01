@@ -23,8 +23,11 @@ class Trip(TimeStampedModel):
         on_delete=models.PROTECT,
         related_name="trips",
     )
+    driver_name = models.CharField(max_length=150, blank=True)
     departure_time = models.DateTimeField()
     arrival_time = models.DateTimeField(null=True, blank=True)
+    # Retard cumule en minutes (0 = a l'heure). Renseigne quand status=delayed.
+    delay_minutes = models.PositiveIntegerField(default=0)
     price = models.DecimalField(max_digits=10, decimal_places=2)
     # Decremente uniquement via select_for_update() (cf. business_rules.md §1).
     available_seats = models.PositiveIntegerField(default=0)

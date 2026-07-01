@@ -18,7 +18,7 @@ staticfiles/
 .coverage
 htmlcov/
 documents/
-docs/
+docs/*.md
 PROMPTS.md
 CLAUDE.md
 .claude/

@@ -1,5 +1,6 @@
-from datetime import date, timedelta
+from datetime import date
 
+from dateutil.relativedelta import relativedelta
 from django.utils import timezone
 
 from .models import Subscription, SubscriptionStatus
@@ -21,7 +22,7 @@ def renew_subscription(subscription: Subscription, today: date | None = None) ->
         The renewed subscription.
     """
     today = today or timezone.localdate()
-    duration = timedelta(days=subscription.plan.duration_days)
+    duration = relativedelta(months=subscription.plan.duration_months)
     # On repart de la borne la plus tardive pour ne pas perdre de jours.
     base = max(subscription.end_date, today)
     subscription.start_date = today

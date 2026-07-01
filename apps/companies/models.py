@@ -64,6 +64,8 @@ class Company(TimeStampedModel):
     # Informations administratives
     rccm = models.CharField(max_length=50, blank=True)  # Registre du commerce
     ifu = models.CharField(max_length=50, blank=True)  # Identifiant financier unique
+    # Documents administratifs soumis a l'inscription (RCCM, agrement...).
+    documents = models.FileField(upload_to="companies/documents/", null=True, blank=True)
 
     # Commission : NULL => on applique le taux global (cf. business_rules.md §2).
     commission_rate = models.DecimalField(
@@ -130,6 +132,7 @@ class CompanyNotificationSettings(TimeStampedModel):
     sms_booking_confirmation = models.BooleanField(default=True)
     sms_departure_reminder = models.BooleanField(default=True)
     sms_parcel_arrival = models.BooleanField(default=True)
+    sms_claim_response = models.BooleanField(default=True)
 
     class Meta:
         verbose_name = "Parametres de notification"

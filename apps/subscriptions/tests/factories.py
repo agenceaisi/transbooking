@@ -18,7 +18,7 @@ class SubscriptionPlanFactory(DjangoModelFactory):
 
     name = factory.Sequence(lambda n: f"Forfait {n}")
     price = 50000
-    duration_days = 30
+    duration_months = 1
     is_active = True
 
 

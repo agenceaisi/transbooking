@@ -64,6 +64,8 @@ class RouteStop(TimeStampedModel):
         related_name="route_stops",
     )
     stop_order = models.PositiveIntegerField()
+    # Nom affiche de l'arret (peut differer du nom officiel de la ville).
+    display_name = models.CharField(max_length=150, blank=True)
     stop_price = models.DecimalField(max_digits=10, decimal_places=2)
 
     class Meta:

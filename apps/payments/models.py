@@ -35,8 +35,14 @@ class Payment(TimeStampedModel):
         null=True,
         blank=True,
     )
-    # TODO: ajouter un FK `parcel` vers parcels.Parcel quand apps.parcels sera
-    # implemente (PROMPT 07). Le paiement de colis reutilisera le meme modele.
+    # Paiement de colis : exclusif avec `booking` (cf. mcd.md §7).
+    parcel = models.ForeignKey(
+        "parcels.Parcel",
+        on_delete=models.PROTECT,
+        related_name="payments",
+        null=True,
+        blank=True,
+    )
 
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     method = models.CharField(max_length=20, choices=PaymentMethod.choices)
